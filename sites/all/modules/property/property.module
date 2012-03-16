@@ -1,0 +1,100 @@
+<?php
+function property_perm(){
+
+return array('access property add page');
+}
+
+function property_menu(){
+$items['property/add'] = array(
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('property_add_view'),
+	'access arguments' => array('access property add page'),
+	
+	'type' => MENU_NORMAL_ITEM,
+	);
+
+	
+	return $items;
+}
+
+
+function property_add_view(){
+global $user;
+
+$form = array();
+$form['#attributes'] = array('enctype' => 'multipart/form-data');
+if($user->uid){
+$form['p_name'] = array(
+'#type' => 'textfield',
+'#title'=>t('Name of the Property'),
+'#required'=>TRUE,
+);
+$form['p_address'] = array(
+'#type' => 'textarea',
+'#title'=>t('Address of the Property'),
+
+'#resizable'=>true,
+
+'#required'=>TRUE
+
+);
+$form['p_property_type'] = array(
+ '#type' => 'select', 
+
+      '#title' => t('Type of the property'), 
+
+      '#default_value' => 'home',
+   '#options' => array(
+
+        'home' => t('Home'), 
+
+        'flat' => t('Flat'), 
+
+        'bunglow' => t('Bunglow'),
+
+      ),
+);
+$form['p_price_per_week'] = array(
+'#type' => 'textfield',
+'#title'=>t('Price per week'),
+
+
+'#field_prefix'=>t("\xC2\xA3"),
+'#required'=>TRUE
+
+);
+$form['p_availability'] = array(
+'#type' => 'textfield',
+'#title'=>t('Availability'),
+'#required'=>TRUE
+
+);
+$form['p_desc'] = array(
+'#type' => 'textarea',
+'#title'=>t('Property description'),
+
+'#resizable'=>true,
+
+'#required'=>TRUE
+
+);
+$form['p_file'] = array(
+'#type'=>'file',
+'#title'=>t('Attach image'),
+'#size'=>40,
+);
+$form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
+return $form;
+}else{
+drupal_goto('user/login');
+}
+
+return $content;
+}
+
+function property_add_view_submit($form,&$form_state){
+$validators = array();
+if($file = file_save_upload('p_file',$validators,file_direcotry_path))
+drupal_set_message(t('Property Saved @'.file_directory_path));
+
+}
