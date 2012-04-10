@@ -1,0 +1,146 @@
+<?php
+/**
+ * Implements hook_init().
+ */
+function buddy_finder_init() {
+  drupal_add_js(drupal_get_path('module', 'buddy_finder') .'/buddy_finder.js');
+}
+
+
+function buddy_finder_perm(){
+
+return array('access buddy finder page');
+}
+
+function buddy_finder_menu(){
+$items['buddy/finder'] = array(
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('buddy_finder_index_view'),
+	'access arguments' => array('access buddy finder page'),
+	'access callback' => TRUE,
+	'type' => MENU_LOCAL_TASK,
+	);
+	
+$items['buddy/finder/have'] = array(
+	'page callback' => 'buddy_finder_testing',
+	
+	
+	'access arguments' => array('access buddy finder page'),
+	'access callback' => TRUE,
+	'type' => MENU_CALLBACK,
+	);
+	
+$items['admin/settings/buddy_finder'] = array(
+	'title' => t('Buddy Finder module settings'),
+    'description' => t('You can add cities and some other information through this settings page'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('buddy_finder_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+	);
+	return $items;
+}
+
+function buddy_finder_index_view(){
+drupal_set_title('Buddy Finder');
+
+$form = array();
+$form['#attributes'] = array('enctype' => 'multipart/form-data');
+
+$form['type'] = array(
+'#type'=>'radios',
+'#title'=>t('Choose your option'),
+'#options'=>array('have'=>'I have a room.','need'=>'I need a room.'),
+'#ahah'=>array(
+	
+	'path'=>'buddy/finder/have',
+	'wrapper'=>'testing',
+	'effect'=>'fade',
+	'method'=>'replace',
+	),
+'#required'=>TRUE,
+'#default_value'=>$default,
+);
+
+$form['form_markup'] = array(
+'#type'=>'markup',
+'#value'=>t('  '),
+'#prefix'=>'<div id="testing">',
+'#suffix'=>'</div>',
+);
+
+$form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
+return $form;
+
+}
+
+function buddy_finder_index_view_submit($form,&$form_state){
+		if (!empty($form_state['ahah_submission'])) {
+    return;
+  }
+	
+	dpm($form_state);
+}
+
+function buddy_finder_testing(){
+ $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  //get the type need or have?
+  $options_type = $_POST['type'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  // Enable the submit/validate handlers to determine whether AHAH-submittted.
+  $form_state['ahah_submission'] = TRUE;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+$testing = $form['testing'];
+ // Remove the wrapper so we don't double it up.
+  unset($testing['#prefix'], $testing['#suffix']);
+
+  $output = theme('status_messages');
+  //generate form for options type depending on type
+  if($options_type == "have"){
+  $output .= "<fieldset><legend>Fill up the details.</legend>";
+  
+  $output .= "<p><label>Name of the property: </label><input type='text' name='st_name'/></p>";
+    $output .= "<p><label>Description: </label><textarea rows='10' cols='20' name='st_desc'/></p>";
+  $output .="<p><label>Select first Image: </label><input type='file' name='st_img1'/></p>";
+    $output .="<p><label>Select second Image: </label><input type='file' name='st_img2'/></p>";
+    $output .="<p><label>Select third Image: </label><input type='file' name='st_img3'/></p>";
+  
+  $ouput .= "</fieldset>";
+  
+  $output .= drupal_render($testing);
+  }else{
+  $output .= "<fieldset><legend>Fill up the details.</legend>";
+  $output .= "<p><label>Which place? : </label><input type='text' name='st_which_place' id='st_which_place'/></p>";
+  $output .= "<p><a href='/getting-in.com/buddy/map'>Try our interactive buddy finder map</a></p>";
+  $ouput .= "</fieldset>";
+  $output .= drupal_render($testing);
+  }
+
+  // Final rendering callback.
+  drupal_json(array('status' => TRUE, 'data' => $output));
+  exit();
+}
+
+
+function buddy_finder_admin(){
+$form = array();
+$form['bfadmin_city'] = array(
+'#type' => 'textarea',
+'#title'=>t('Add Cities'),
+'#description'=>t('add comma "," separated list of cities'),
+'#default_value' => variable_get('bfadmin_city',''),
+'#resizable'=>TRUE,
+
+
+);
+dpm(variable_get('bfadmin_city',array()));
+return system_settings_form($form);
+
+}
+

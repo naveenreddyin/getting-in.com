@@ -1,0 +1,39 @@
+<?php
+/**
+ * Implements hook_init().
+ */
+function buddy_init() {
+  
+  
+}
+
+
+function buddy_perm(){
+
+return array('access buddy map page');
+}
+
+function buddy_menu(){
+$items['buddy/map'] = array(
+	'page callback' => 'buddy_map_index_view',
+	'access arguments' => array('access buddy map page'),
+	'access callback' => TRUE,
+	'type' => MENU_LOCAL_TASK,
+	);
+	
+return $items;
+}
+
+function buddy_map_index_view(){
+drupal_add_css(drupal_get_path('module', 'buddy') .'/buddy.css');
+drupal_add_js(drupal_get_path('module', 'buddy') .'/buddy.js');
+drupal_set_title("Welcome to interactive buddy finder");
+$content = "";
+$sql = "SELECT * FROM {buddy_html}";
+$result = db_query($sql);
+$row = db_fetch_object($result);
+$content = $row->bh_html;
+
+return $content;
+
+}

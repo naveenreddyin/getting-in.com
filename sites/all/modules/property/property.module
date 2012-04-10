@@ -1,4 +1,10 @@
 <?php
+
+function property_init(){
+
+  drupal_add_js(drupal_get_path('module', 'property') .'/property.js');
+
+}
 function property_perm(){
 
 return array('access property add page');
@@ -10,7 +16,20 @@ $items['property/add'] = array(
 	'page arguments' => array('property_add_view'),
 	'access arguments' => array('access property add page'),
 	
-	'type' => MENU_NORMAL_ITEM,
+	'type' => MENU_LOCAL_TASK,
+	);
+$items['property/list'] = array(
+	'page callback' => 'property_list_view',
+	'access arguments' => array('access property list page'),
+	
+	'type' => MENU_LOCAL_TASK,
+	);
+$items['property/edit/%'] = array(
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('property_edit_view',2),
+	'access arguments' => array('access property edit page'),
+	
+	'type' => MENU_CALLBACK,
 	);
 
 	
@@ -78,11 +97,65 @@ $form['p_desc'] = array(
 '#required'=>TRUE
 
 );
-$form['p_file'] = array(
+$form['checklist_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Check List'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,  
+  );
+ 
+$options = array(
+'yes'=>t('Yes'),
+'no'=>t('No')
+
+);
+$form['checklist_fieldset']['heating'] = array(
+   '#type' => 'radios',
+   '#title' => t('Heating options'),
+  
+   '#options' =>$options,
+  '#default_value'=>'yes',
+  );
+  $form['checklist_fieldset']['interior_features'] = array(
+   '#type' => 'radios',
+   '#title' => t('Interior features'),
+  
+   '#options' =>$options,
+   '#default_value'=>'yes',
+  );
+  $form['checklist_fieldset']['appliances'] = array(
+   '#type' => 'radios',
+   '#title' => t('Appliances'),
+  
+   '#options' =>$options,
+   '#default_value'=>'yes',
+  );
+  $form['checklist_fieldset']['white_goods'] = array(
+   '#type' => 'radios',
+   '#title' => t('White Goods'),
+  
+   '#options' =>$options,
+   '#default_value'=>'yes',
+   
+  );
+$form['p_file1'] = array(
 '#type'=>'file',
-'#title'=>t('Attach image'),
+'#title'=>t('Attach image 1'),
+'#size'=>40,
+
+);
+$form['p_file2'] = array(
+'#type'=>'file',
+'#title'=>t('Attach image 2'),
+'#size'=>40,
+
+);
+$form['p_file3'] = array(
+'#type'=>'file',
+'#title'=>t('Attach image 3'),
 '#size'=>40,
 );
+
 $form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
 return $form;
 }else{
@@ -93,8 +166,274 @@ return $content;
 }
 
 function property_add_view_submit($form,&$form_state){
+global $user;
 $validators = array();
-if($file = file_save_upload('p_file',$validators,file_direcotry_path))
-drupal_set_message(t('Property Saved @'.file_directory_path));
+$name = $form_state['values']['p_name'];
+$address = $form_state['values']['p_address'];
+$type = $form_state['values']['p_property_type'];
+$price = $form_state['values']['p_price_per_week'];
+$availability = $form_state['values']['p_availability'];
+$desc = $form_state['values']['p_desc'];
 
+$heating = $form_state['values']['white_goods'];
+$interior = $form_state['values']['interior_features'];
+$appliances = $form_state['values']['appliances'];
+$white_goods = $form_state['values']['white_goods'];
+
+
+$count = 0;
+if($file = file_save_upload('p_file1',$validators,file_direcotry_path)){
+$file0_path = $file->filename;
+
+$count++;
+}
+
+
+if($file2 = file_save_upload('p_file2',$validators,file_direcotry_path)){
+$file1_path = $file2->filename;
+
+$count++;
+}
+
+
+
+if($file3 = file_save_upload('p_file3',$validators,file_direcotry_path)){
+$file2_path = $file3->filename;
+
+$count++;
+}
+
+if($count==1){
+
+if(db_query("INSERT INTO {property} (property_name, property_address, property_type,property_price,property_description,property_heating,property_interior_features,property_appliances,property_white_goods,property_img1,property_uid) VALUES ('%s', '%s', '%s',%d,'%s','%s','%s','%s','%s','%s',%d)", $name,$address,$type,$price,$desc,$heating,$interior,$appliances,$white_goods,$file0_path,$user->uid)){
+drupal_set_message(t('Property Saved successfully!'));
+}else{
+drupal_set_message(t('Could not insert the property into the database'));
+
+}
+
+}elseif($count == 2){
+
+if(db_query("INSERT INTO {property} (property_name, property_address, property_type,property_price,property_description,property_heating,property_interior_features,property_appliances,property_white_goods,property_img1,property_img2,property_uid) VALUES ('%s', '%s', '%s',%d,'%s','%s','%s','%s','%s','%s','%s',%d)", $name,$address,$type,$price,$desc,$heating,$interior,$appliances,$white_goods,$file0_path,$file1_path,$user->uid)){
+drupal_set_message(t('Property Saved successfully!'));
+}else{
+drupal_set_message(t('Could not insert the property into the database'));
+
+}
+
+}elseif($count == 3){
+if(db_query("INSERT INTO {property} (property_name, property_address, property_type,property_price,property_description,property_heating,property_interior_features,property_appliances,property_white_goods,property_img1,property_img2,property_img3,property_uid) VALUES ('%s', '%s', '%s',%d,'%s','%s','%s','%s','%s','%s','%s','%s',%d)", $name,$address,$type,$price,$desc,$heating,$interior,$appliances,$white_goods,$file0_path,$file1_path,$file2_path,$user->uid)){
+drupal_set_message(t('Property Saved successfully!'));
+
+}else{
+drupal_set_message(t('Could not insert the property into the database'));
+}
+/*$fields = array(
+'property_name'=>$name,
+'property_address'=>$address,
+'property_type'=>$type,
+'property_price'=>$price,
+'property_description'=>$desc,
+'property_heating'=>$heating,
+'property_interior_features'=>$interior,
+'property_appliances'=>$appliances,
+'property_white_goods'=>$white_goods,
+'property_img1'=>$file0_path,
+'property_img2'=>$file1_path,
+'property_img3'=>$file2_path
+);*/
+
+}elseif($count == 0){
+
+drupal_set_message(t('Please upload atleast one image for this property'));
+
+}
+
+
+
+
+}
+
+function property_list_view(){
+global $user;
+drupal_set_title('List the Property uploaded by you');
+$listContent = "";
+
+$uid = $user->uid;
+$result = pager_query("SELECT * FROM {property} WHERE property_uid=$uid ORDER BY property_id DESC");
+if(db_affected_rows($result) > 0){
+$listContent .= "<ul>";
+while($row = db_fetch_object($result)){
+if($row->property_img1 != NULL)
+$listContent .= "<li><img src='/getting-in.com/sites/default/files/".$row->property_img1."'/><a href='edit/$row->property_id'>".$row->property_name."</a>                <a href='delete/$row->property_id'>Delete</a>";
+else
+$listContent .= "<li><img src='/getting-in.com/sites/default/files/default_property.gif'/></li>";
+
+
+$listContent .= "</li>";
+}
+
+$listContent .= "</ul>";
+}else{
+$listContent .= "No Properties Listed by you";
+} //end of if and else for count $result
+return $listContent;
+}
+
+function property_edit_view(&$form_state,$id){
+drupal_set_title("Edit the Property");
+
+
+global $user;
+
+
+$sql = "SELECT * FROM {property} WHERE property_id = $id AND property_uid = $user->uid";
+$result = db_query($sql);
+$row = db_fetch_object($result);
+
+
+
+
+$form = array();
+$form['#attributes'] = array('enctype' => 'multipart/form-data');
+$form['p_name'] = array(
+'#type' => 'textfield',
+'#title'=>t('Name of the Property'),
+'#required'=>TRUE,
+'#default_value'=>$row->property_name,
+);
+$form['p_address'] = array(
+'#type' => 'textarea',
+'#title'=>t('Address of the Property'),
+
+'#resizable'=>true,
+'#default_value'=>$row->property_address,
+
+'#required'=>TRUE,
+
+
+);
+$form['p_property_type'] = array(
+ '#type' => 'select', 
+
+      '#title' => t('Type of the property'), 
+
+      '#default_value' => 'home',
+   '#options' => array(
+
+        'home' => t('Home'), 
+
+        'flat' => t('Flat'), 
+
+        'bunglow' => t('Bunglow'),
+
+      ),
+ '#default_value'=>$row->property_type,
+ 
+);
+$form['p_price_per_week'] = array(
+'#type' => 'textfield',
+'#title'=>t('Price per week'),
+
+
+'#field_prefix'=>t("\xC2\xA3"),
+'#default_value'=>$row->property_price,
+
+'#required'=>TRUE
+
+);
+$form['p_availability'] = array(
+'#type' => 'textfield',
+'#title'=>t('Availability'),
+'#default_value'=>'2 weeks',
+
+'#required'=>TRUE
+
+);
+$form['p_desc'] = array(
+'#type' => 'textarea',
+'#title'=>t('Property description'),
+
+'#resizable'=>true,
+'#default_value'=>$row->property_description,
+
+'#required'=>TRUE
+
+);
+$form['checklist_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Check List'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,  
+  );
+ 
+$options = array(
+'yes'=>t('Yes'),
+'no'=>t('No')
+
+);
+$form['checklist_fieldset']['heating'] = array(
+   '#type' => 'radios',
+   '#title' => t('Heating options'),
+  
+   '#options' =>$options,
+  '#default_value'=>$row->property_heating,
+
+  );
+  $form['checklist_fieldset']['interior_features'] = array(
+   '#type' => 'radios',
+   '#title' => t('Interior features'),
+  
+   '#options' =>$options,
+   '#default_value'=>$row->property_interior_features,
+
+  );
+  $form['checklist_fieldset']['appliances'] = array(
+   '#type' => 'radios',
+   '#title' => t('Appliances'),
+  
+   '#options' =>$options,
+   '#default_value'=>$row->property_appliances,
+
+  );
+  $form['checklist_fieldset']['white_goods'] = array(
+   '#type' => 'radios',
+   '#title' => t('White Goods'),
+  
+   '#options' =>$options,
+   '#default_value'=>$row->property_white_goods,
+
+   
+  );
+$form['p_file1_markup'] = array(
+'#value'=>"<p><img src='/getting-in.com/sites/default/files/$row->property_img1'/><input type='button' id='img1_button' value='remove'/></p>",
+
+
+
+);
+$form['p_file1'] = array(
+'#type'=>'file',
+'#title'=>t('Attach image 1'),
+'#size'=>40,
+
+);
+
+$form['p_file2'] = array(
+'#type'=>'file',
+'#title'=>t('Attach image 2'),
+'#size'=>40,
+
+);
+$form['p_file3'] = array(
+'#type'=>'file',
+'#title'=>t('Attach image 3'),
+'#size'=>40,
+);
+
+$form['submit'] = array('#type' => 'submit', '#value' => t('Update'));
+return $form;
+}
+
+function property_edit_view_submit($form,&$form_state){
+dpm($form_state);
 }
